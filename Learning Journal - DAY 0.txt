@@ -1,0 +1,45 @@
+Day 0 — Personal Learning Journal
+
+1. What I Already Know
+
+I know basic Python, including how lists, tuples, and for-loops work.
+
+I have a basic understanding of Data Structures and Algorithms. I know common data structures such as arrays, linked lists, stacks, queues, trees, and hash tables. I also understand fundamental algorithms such as searching and sorting, and I have a basic understanding of concepts like time and space complexity.
+
+I have worked with APIs and know that an API key can be used by a model or application to access an external AI service and get a response from it.
+
+2. What I Want to Understand by Day 5
+
+I want to understand APIs more deeply, including how requests and responses work and how APIs are used in a real system.
+
+I want to understand system design in depth, especially how different components of a system connect and communicate with each other.
+
+I want to understand how the frontend and backend connect and work together when a user interacts with an application.
+
+3. My Learning Style
+
+Do I learn better by reading, watching, or doing?
+
+I learn better by doing because I understand a concept better when I actually try it myself.
+
+When I get stuck, what is my first instinct?
+
+I usually search for examples or documentation first. If I still cannot figure it out, I ask someone for help.
+
+What is one learning habit I want to build this week?
+
+I want to build the habit of trying to solve a problem quickly without going around
+
+4. Day 0 Log
+
+What is the one thing I understood most clearly today?
+
+I understood that actively trying to explain a concept in my own words helps me find out whether I really understand it or have only memorised it.
+
+What is the one thing that still feels fuzzy?
+
+I am still not completely clear about how system designs stuff connect to AI side
+
+What did I actually make or produce today?
+
+I created my learning journal and learned how I actually should learn
