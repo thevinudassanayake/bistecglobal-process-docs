@@ -1,0 +1,106 @@
+{
+  "info": {
+    "name": "BookSwap Day 2 - mock smoke tests",
+    "description": "The five smoke tests from the Day 2 brief, run against the Prism mock at http://127.0.0.1:4010. Start the mock first: npx @stoplight/prism-cli mock Thevinu-day2-bookswap-openapi.yaml --port 4010",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://127.0.0.1:4010" }
+  ],
+  "item": [
+    {
+      "name": "1 GET /books (page 1, size 20) - expect 200",
+      "request": {
+        "method": "GET",
+        "header": [ { "key": "Authorization", "value": "Bearer test-token" } ],
+        "url": {
+          "raw": "{{baseUrl}}/books?page=1&pageSize=20",
+          "host": [ "{{baseUrl}}" ],
+          "path": [ "books" ],
+          "query": [ { "key": "page", "value": "1" }, { "key": "pageSize", "value": "20" } ]
+        }
+      },
+      "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+        "pm.test('reply has items, page, pageSize and total', function () {",
+        "  var b = pm.response.json();",
+        "  pm.expect(b).to.have.all.keys('page', 'pageSize', 'total', 'items');",
+        "});"
+      ] } } ]
+    },
+    {
+      "name": "2 POST /books (valid book) - expect 201",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer test-token" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"title\":\"The Road to Wigan Pier\",\"author\":\"George Orwell\",\"isbn\":\"9780141036687\",\"condition\":\"good\"}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": { "raw": "{{baseUrl}}/books", "host": [ "{{baseUrl}}" ], "path": [ "books" ] }
+      },
+      "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('status is 201', function () { pm.response.to.have.status(201); });"
+      ] } } ]
+    },
+    {
+      "name": "3 POST /books (title missing) - negative test, expect 400 or 422",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer test-token" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"author\":\"George Orwell\",\"isbn\":\"9780141036687\",\"condition\":\"good\"}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": { "raw": "{{baseUrl}}/books", "host": [ "{{baseUrl}}" ], "path": [ "books" ] }
+      },
+      "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('status is 400 or 422', function () { pm.expect([400, 422]).to.include(pm.response.code); });"
+      ] } } ]
+    },
+    {
+      "name": "4 POST /books/999/borrow-requests - expect 201",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer test-token" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": { "mode": "raw", "raw": "{}", "options": { "raw": { "language": "json" } } },
+        "url": {
+          "raw": "{{baseUrl}}/books/999/borrow-requests",
+          "host": [ "{{baseUrl}}" ],
+          "path": [ "books", "999", "borrow-requests" ]
+        }
+      },
+      "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('status is 201', function () { pm.response.to.have.status(201); });",
+        "pm.test('new request is pending', function () { pm.expect(pm.response.json().status).to.eql('pending'); });"
+      ] } } ]
+    },
+    {
+      "name": "5 GET /books (no Authorization header) - negative test, expect 401",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/books?page=1&pageSize=20",
+          "host": [ "{{baseUrl}}" ],
+          "path": [ "books" ],
+          "query": [ { "key": "page", "value": "1" }, { "key": "pageSize", "value": "20" } ]
+        }
+      },
+      "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('status is 401', function () { pm.response.to.have.status(401); });"
+      ] } } ]
+    }
+  ]
+}

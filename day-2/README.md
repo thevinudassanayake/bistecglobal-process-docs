@@ -16,3 +16,6 @@
 | `Thevinu-day2-storage-decisions.md` | Storage, cache and queue decisions |
 | `Thevinu-day2-container-diagram.png` / `.drawio` | C4 Level 2 diagram and its editable source |
 | `Thevinu-day2-mock-report.md` | Prism mock smoke test results |
+| `Thevinu-day2-bookswap.postman_collection.json` | The five mock tests as a Postman collection (also runs with `newman`) |
+
+These files were prepared with help from an AI assistant (Claude Code).
