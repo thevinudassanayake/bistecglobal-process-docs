@@ -1,0 +1,233 @@
+# BookSwap alert rules.
+# A design, not a deployment: nothing is built, so no rule or query here has been run.
+# A1 to A7 are the same alerts as in reliability/runbook.md. S1 to S13 are rows in slo/slo-map.md.
+# Queries are for the Application Insights Logs screen.
+
+version: 1
+
+severity_map:
+  Sev1: "Outage, or personal data exposed. Page at any hour."
+  Sev2: "Users are being hurt now. Page at any hour."
+  Sev3: "Needs a fix, but not tonight. Team message and a ticket."
+  Sev4: "Information only. Team message."
+
+action_groups:
+  page:   { name: ag-bookswap-oncall-page, does: "Calls and texts the on-call engineer. Pages the engineering lead if nobody acknowledges within 5 minutes." }
+  teams:  { name: ag-bookswap-teams, does: "Posts in the BookSwap alerts Teams channel." }
+  ticket: { name: ag-bookswap-ticket, does: "Creates a ticket in the team backlog." }
+
+notify_by_severity:
+  Sev1: [page, teams]
+  Sev2: [page, teams]
+  Sev3: [teams, ticket]
+  Sev4: [teams]
+
+alerts:
+
+  # ---------- Outages and overload (used by the runbook) ----------
+
+  - id: A1
+    name: Books endpoint down
+    severity: Sev1
+    protects: [S3, S12]
+    signal: "Availability test GET /books (every minute, 3 Azure locations): availabilityResults/availabilityPercentage"
+    condition: "Average below 70 over 2 minutes, checked every minute. That is 2 or more of 3 locations failing, twice in a row. It pages within about 3 minutes."
+    note: "Uses GET because a test POST would create fake books. Write-only failures are caught by A9."
+    notify: [page, teams]
+    runbook: "reliability/runbook.md#failure-1-azure-sql-primary-unavailable-for-5-minutes"
+    owner: On-call backend engineer
+
+  - id: A2
+    name: Database unreachable
+    severity: Sev1
+    protects: [S2, S3]
+    conditions_any:
+      - "Azure SQL metric connection_failed: Total above 5 over 2 minutes"
+      - "More than 50% of SQL calls fail over 2 minutes (query below)"
+    query: |
+      dependencies
+      | where timestamp > ago(2m) and type == "SQL"
+      | summarize failed = countif(success == false), total = count()
+      | where 100.0 * failed / total > 50
+    notify: [page, teams]
+    runbook: "reliability/runbook.md#failure-1-azure-sql-primary-unavailable-for-5-minutes"
+    owner: On-call backend engineer
+
+  - id: A3
+    name: Redis down
+    severity: Sev3
+    protects: [S2]
+    conditions_any:
+      - "More than 20% of Redis calls fail over 5 minutes (query below)"
+      - "Azure Cache for Redis metric connectedclients: Minimum below 1 for 5 minutes"
+    query: |
+      dependencies
+      | where timestamp > ago(5m) and type == "Redis"
+      | summarize failed = countif(success == false), total = count()
+      | where 100.0 * failed / total > 20
+    notify: [teams, ticket]
+    runbook: "reliability/runbook.md#failure-2-azure-cache-for-redis-is-down"
+    owner: On-call backend engineer
+
+  - id: A4
+    name: Too many server errors
+    severity: Sev2
+    protects: [S2, S3]
+    condition: "Front Door metric Percentage5XX above 1% over 5 minutes"
+    notify: [page, teams]
+    runbook: "observability/plan.md#card-1-slow-or-failing"
+    owner: On-call backend engineer
+
+  - id: A5
+    name: Servers overloaded
+    severity: Sev2
+    protects: [S1, S2]
+    conditions_any:
+      - "App Service plan metric CpuPercentage: Average above 85% for 10 minutes"
+      - "App Service plan metric HttpQueueLength: Average above 100 for 5 minutes"
+    note: "The runbook says to check the number of API copies first."
+    notify: [page, teams]
+    runbook: "reliability/runbook.md#failure-3-sunday-tabloid-spike--10-sustained-traffic"
+    owner: On-call backend engineer
+
+  - id: A6
+    name: Traffic spike started
+    severity: Sev4
+    protects: []
+    condition: "Front Door requests in the last 10 minutes are more than 5 times the same time last week (with a floor of 100)"
+    query: |
+      let now10 = toscalar(AzureDiagnostics | where Category == "FrontDoorAccessLog" and TimeGenerated > ago(10m) | count);
+      let lastWeek10 = toscalar(AzureDiagnostics | where Category == "FrontDoorAccessLog" and TimeGenerated between (ago(7d + 10m) .. ago(7d)) | count);
+      print now10, lastWeek10
+      | where now10 > 5 * max_of(lastWeek10, 100)
+    notify: [teams]
+    runbook: "reliability/runbook.md#failure-3-sunday-tabloid-spike--10-sustained-traffic"
+    owner: Event captain
+
+  - id: A7
+    name: Emails stuck or late
+    severity: Sev3
+    protects: [S8]
+    conditions_any:
+      - "Service Bus metric ActiveMessages: Average above 30,000 for 30 minutes"
+      - "Service Bus metric DeadletteredMessages: Maximum above 0 over 5 minutes"
+    notify: [teams, ticket]
+    runbook: "observability/plan.md#card-4-email-trouble"
+    owner: Email worker developer
+
+  # ---------- Targets from the SLO map ----------
+
+  - id: A8
+    name: Search too slow
+    severity: Sev2
+    protects: [S1, S2]
+    condition: "More than 3% of searches are not a success under 800 ms over 10 minutes (allowed: 1%). Checked every 5 minutes."
+    query: |
+      requests
+      | where timestamp > ago(10m) and name == "GET /books" and resultCode !startswith "4"
+      | summarize bad = countif(not(resultCode startswith "2" and duration < 800)), total = count()
+      | where 100.0 * bad / total > 3
+    notify: [page, teams]
+    runbook: "observability/plan.md#card-1-slow-or-failing"
+    owner: On-call backend engineer
+
+  - id: A9
+    name: Listings failing
+    severity: Sev2
+    protects: [S3]
+    condition: "More than 1% of listing requests fail over 5 minutes (allowed: 0.1%). Checked every 5 minutes."
+    query: |
+      requests
+      | where timestamp > ago(5m) and name == "POST /books" and resultCode !startswith "4"
+      | summarize bad = countif(not(resultCode startswith "2")), total = count()
+      | where 100.0 * bad / total > 1
+    notify: [page, teams]
+    runbook: "observability/plan.md#card-1-slow-or-failing"
+    owner: On-call backend engineer
+
+  - id: A10
+    name: Photo uploads failing
+    severity: Sev3
+    protects: [S5]
+    condition: "More than 5% of valid photo uploads do not return 200 over 30 minutes. Checked every 15 minutes."
+    query: |
+      requests
+      | where timestamp > ago(30m) and name == "PUT /books/:bookId/photo" and resultCode !startswith "4"
+      | summarize bad = countif(resultCode != "200"), total = count()
+      | where 100.0 * bad / total > 5
+    notify: [teams, ticket]
+    runbook: "observability/plan.md#card-1-slow-or-failing"
+    owner: On-call backend engineer
+
+  - id: A11
+    name: Notifications slow
+    severity: Sev3
+    protects: [S7]
+    condition: "3 or more of the last 12 robot checks (the last hour) took more than 2 seconds. Checked every 15 minutes."
+    query: |
+      traces
+      | where timestamp > ago(1h) and tostring(customDimensions.event) == "probe.notification"
+      | summarize slow = countif(toint(customDimensions.delayMs) > 2000)
+      | where slow >= 3
+    notify: [teams, ticket]
+    runbook: "observability/plan.md#card-1-slow-or-failing"
+    owner: On-call backend engineer
+
+  - id: A12
+    name: Personal data leaked
+    severity: Sev1
+    protects: [S9]
+    condition: "A release test or the daily robot found an address, a phone number or another member's loan history in a reply. Checked every 5 minutes."
+    query: |
+      traces
+      | where timestamp > ago(15m)
+      | where tostring(customDimensions.event) in ("probe.privacy", "probe.authz.loan_history")
+      | where tostring(customDimensions.result) == "fail"
+    notify: [page, teams]
+    runbook: "observability/plan.md#card-2-leaks"
+    owner: Engineering lead
+
+  - id: A13
+    name: Request without login
+    severity: Sev1
+    protects: [S10]
+    condition: "Any request outside /health answered with success and no member ID. Checked every 5 minutes."
+    query: |
+      requests
+      | where timestamp > ago(15m) and name !startswith "GET /health" and resultCode startswith "2"
+      | where isempty(tostring(customDimensions.memberId))
+    notify: [page, teams]
+    runbook: "observability/plan.md#card-2-leaks"
+    owner: Engineering lead
+
+  - id: A14
+    name: Release rule broken
+    severity: Sev3
+    protects: [S4, S6, S11]
+    note: "Any one of three checks. Releases stop until it is fixed."
+    conditions_any:
+      - "S4: one Idempotency-Key created more than one listing in the last 24 hours (checked every hour)"
+      - "S6: the release check finds a photo or binary column in the database"
+      - "S11: an accepted token lasted over 3,600 seconds in the last hour (checked every 15 minutes)"
+    query: |
+      traces
+      | where timestamp > ago(24h)
+      | where tostring(customDimensions.event) == "listing.created"
+      | summarize creations = count() by key = tostring(customDimensions.idempotencyKey)
+      | where creations > 1
+    notify: [teams, ticket]
+    runbook: "observability/plan.md#card-3-rule-broken"
+    owner: API lead
+
+  - id: A15
+    name: Audit log gap
+    severity: Sev3
+    protects: [S13]
+    condition: "The daily check (loans in the database compared with audit log lines) finds a gap of more than 0.1%."
+    query: |
+      traces
+      | where timestamp > ago(1d) and tostring(customDimensions.event) == "probe.audit"
+      | where todouble(customDimensions.gapPercent) > 0.1
+    notify: [teams, ticket]
+    runbook: "observability/plan.md#card-3-rule-broken"
+    owner: API lead
