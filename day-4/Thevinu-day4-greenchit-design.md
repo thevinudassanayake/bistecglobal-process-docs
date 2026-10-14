@@ -86,5 +86,6 @@ Read the pack in this order. It takes about 10 minutes.
 4. **The component diagram.** It zooms into the Claims API only. Follow one request: Auth checks it, then it goes to Claims or Approvals. Claims saves to the database, asks Receipts for the upload URLs, and calls Audit and Notifications. The outside boxes are the containers from step 2 and have the same names.
 5. **The component table and the open risk.** Check that each component has one sentence of responsibility.
 6. **The journey over time:** the sequence diagrams in `Thevinu-day4-greenchit-design/diagrams/sequence-submit-approve.md` (submit and approve, plus two error paths).
+7. **The decisions:** the four ADRs in `Thevinu-day4-greenchit-design/adrs/` explain why we chose this approach, how we host, which database, and how receipts are stored. The scored comparison behind the hosting choice is in `Thevinu-day4-greenchit-design/trade-offs/hosting-options.md`.
 
 *Drafted with AI assistance (Claude). Checked against the Day 4 brief by Thevinu.*
