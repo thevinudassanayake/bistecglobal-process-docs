@@ -1,8 +1,8 @@
-# Receipt Categoriser — Feature Spec v0.4
+# Receipt Categoriser — Feature Spec v0.5
 
 **Author:** Thevinu · **Status:** Draft · **Date:** 2026-10-15 · **For:** GreenChit (Day 4 design pack)
 
-*This version only changes the wording, to make it plainer. The rules and numbers are the same as v0.3.*
+*The rules and numbers are the same as v0.3. Later versions only changed the wording and cut the acceptance criteria to six.*
 
 ## 1. Why
 
@@ -112,7 +112,9 @@ The switch is the key `receipt-categoriser` in Azure App Configuration. It is ch
 
 ## 4. Acceptance criteria
 
-See `Thevinu-day5-receipt-categoriser-acceptance.md`. There are 13 (AC-01 to AC-13).
+See `Thevinu-day5-receipt-categoriser-acceptance.md`. There are 6 (AC-01 to AC-06). They cover the main cases.
+
+The other rules in this spec are **not** written as criteria, but the code still checks them with extra tests: the exact 0.6 edge, the 2 second AI limit, the reading service being down, bad input, the switch being off, the final-choice log, and an AI answer we can't use.
 
 ## 5. Examples
 
@@ -169,6 +171,7 @@ Azure OpenAI answers 503. The receipt says "City Taxi, Highway Toll, Total LKR 1
 
 ## Change history
 
-- **v0.1 to v0.2** (after the first AI session asked questions): said what "belongs to this claim" means, that the file type comes from the file name, the order of the checks, what to do with an AI answer we can't use (AC-13), the rounding, and that tests check the error code.
+- **v0.1 to v0.2** (after the first AI session asked questions): said what "belongs to this claim" means, that the file type comes from the file name, the order of the checks, what to do with an AI answer we can't use, the rounding, and that tests check the error code.
 - **v0.2 to v0.3** (after the second AI session): "most matching words" now means the most different words, "cannot be read" now means no words or only blank space, and what the submit step passes to the "decided" entry. These describe what the tested code already did, so here the spec caught up with the code.
 - **v0.3 to v0.4:** plainer wording only. No rule or number changed.
+- **v0.4 to v0.5:** cut the acceptance criteria from 13 to the six main ones. No rule changed. The other seven are now extra tests in the code.

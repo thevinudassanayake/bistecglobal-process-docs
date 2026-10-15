@@ -8,7 +8,7 @@
 
 - **The other pair:** ______ (to fill in)
 - **Their spec version (commit hash):** ______ (to fill in)
-- **My spec version:** v0.4
+- **My spec version:** v0.5
 
 **The three kinds of problem (called "smells" in the course):**
 - **Vague:** a word with no number or clear meaning, like "fast".
@@ -33,7 +33,7 @@ Numbers 1 to 6 came from the two AI sessions (`ai-session/response-1.md` and `re
 | 1 | Contract, Errors | **Hidden assumption** | "does not belong to this claim" | "A file belongs to claim 1042 if its path starts with `claim-1042/`." (done in v0.2) |
 | 2 | Contract, Inputs | **Vague** | "The file is JPEG or PNG" | "...decided by the end of the file name (`.jpg`, `.jpeg` or `.png`, capital letters don't matter). We don't open the file." (done in v0.2) |
 | 3 | Contract, Errors | **Hidden assumption** | (nothing about which error comes first) | "The checks run in this order: the switch, then the input (400), then storage (404), then the size (413), then the outside services." (done in v0.2) |
-| 4 | Contract, AI problems | **Hidden assumption** | "If Azure OpenAI gives an error (such as 503)..." | "If the AI gives a category that is not one of the five, or a confidence outside 0.0 to 1.0, treat it as a failure and use the backup rules." (done in v0.2, as AC-13) |
+| 4 | Contract, AI problems | **Hidden assumption** | "If Azure OpenAI gives an error (such as 503)..." | "If the AI gives a category that is not one of the five, or a confidence outside 0.0 to 1.0, treat it as a failure and use the backup rules." (done in v0.2, and it is now an extra test) |
 | 5 | Backup rules | **Vague** | "The category with the most matching words wins." | "...the most **different** listed words wins. A word counts once, however many times it appears." (done in v0.3) |
 | 6 | Contract, Outputs | **Vague** | "(the text cannot be found or parsed)" | "(no words are found, or only blank space)" (done in v0.3) |
 | 7 | Why | **Vague** | "at least 70% of suggestions are accepted" | The 70% is a guess. I kept it as a proposal and added open question 8, because nobody can say if 70% is good without a starting figure. |

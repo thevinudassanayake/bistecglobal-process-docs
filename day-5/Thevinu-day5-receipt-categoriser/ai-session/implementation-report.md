@@ -17,6 +17,8 @@
 | 2 | Build the rest: AC-04, 05, 06, 07, 10, 11, 12, 13 (backup rules, time limits, unreadable receipts, privacy, the switch, the final choice) | The backup rules, the time limits, the answer checks and 8 new tests. All 15 pass. | **Mostly.** It broke one of my instructions, and it filled 3 gaps in the spec with its own choices (see below). | I ran the tests. I broke the code on purpose in 5 ways to see if the tests would notice (they did, every time). I wrote spec v0.3 to close the 3 gaps. |
 | 3 | (No AI. My own check.) I read all the code against the spec. | No extra fields, no extra error codes, and the backup rules never call the AI. | Yes | Nothing to fix. |
 
+**A note about numbers.** The AC numbers in this table come from the list of 13 criteria that the AI sessions used. After the sessions I cut the acceptance file down to the six main criteria, as the brief only asks for six. The seven I removed became "Extra" tests. I only renamed the test titles. No test logic changed, and all 15 still pass. The saved messages still show the 13 criteria, because that is what the AI was given.
+
 ## Where the AI went off the spec
 
 1. **In round 2 it ignored an instruction.** I told it to list its questions and guesses **before** writing code. It wrote the code first, and said so itself. Lesson: a one-shot agent can't wait for answers, so "ask first" can't work. The questions need their own first message.
@@ -27,7 +29,7 @@
 
 ## What the tests prove, and what they don't
 
-- Every one of the 13 criteria has a test. Two criteria have an extra check (exactly 10 MB, and a file missing from storage).
+- Each of the 6 acceptance criteria has a test, and the 9 extra tests cover the other rules in the spec.
 - The 5 ways I broke the code: moved the 0.6 line, made the size check one byte off, put the file name into a log entry, changed a backup score, and made the AI time limit much longer. Each one made a test fail. A run with no change stayed green.
 - **Not proven:** anything about real Azure. The 4 second limit is only tested with a fake slow AI. The real speed, the real cost of each suggestion, and how good the real AI's answers are, are all unknown.
 - The AC-05 test waits a real 2 seconds. That is slow for a test, but it is not wrong.

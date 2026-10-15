@@ -37,7 +37,7 @@ test("AC-02 ambiguous receipt", async () => {
   assert.partialDeepStrictEqual(r.body, { category: "Other", confidence: 0.45, needsReview: true });
 });
 
-test("AC-03 boundary: 0.60 is not review, 0.59 is", async () => {
+test("Extra: 0.60 is not review, 0.59 is", async () => {
   for (const [c, expected] of [[0.6, false], [0.59, true]] as const) {
     const { deps } = makeDeps({ llm: { category: "Meals", confidence: c, tokens: 1 } });
     const r = await categorise(req(FILE), deps);
@@ -45,7 +45,7 @@ test("AC-03 boundary: 0.60 is not review, 0.59 is", async () => {
   }
 });
 
-test("AC-04 AI unavailable: fallback", async () => {
+test("AC-03 AI unavailable: backup rules", async () => {
   const { deps } = makeDeps({ llmFails: true, text: "City Taxi, Highway Toll, Total LKR 1,800" });
   const r = await categorise(req(FILE), deps);
   assert.equal(r.status, 200);
@@ -55,7 +55,7 @@ test("AC-04 AI unavailable: fallback", async () => {
   assert.partialDeepStrictEqual(r2.body, { category: "Other", confidence: 0.2, source: "rule-based" });
 });
 
-test("AC-05 AI too slow: fallback within 4 s", async () => {
+test("Extra: AI too slow, backup rules within 4 s", async () => {
   const { deps } = makeDeps({ llmDelayMs: 2500, text: "City Taxi, Highway Toll" });
   const t0 = Date.now();
   const r = await categorise(req(FILE), deps);
@@ -64,7 +64,7 @@ test("AC-05 AI too slow: fallback within 4 s", async () => {
   assert.equal((r.body as any).source, "rule-based");
 });
 
-test("AC-06 receipt cannot be read", async () => {
+test("AC-04 receipt cannot be read", async () => {
   const { deps, calls } = makeDeps({ text: null });
   const r = await categorise(req(FILE), deps);
   assert.equal(r.status, 200);
@@ -79,14 +79,14 @@ test("AC-06 receipt cannot be read", async () => {
   assert.equal(calls.events.find((e) => e.name === "categoriser.suggested")!.props.outcome, "unreadable");
 });
 
-test("AC-07 text reader unavailable", async () => {
+test("Extra: reading service unavailable", async () => {
   const { deps } = makeDeps({ readerFails: true });
   const r = await categorise(req(FILE), deps);
   assert.equal(r.status, 502);
   assert.equal((r.body as any).error, "upstream_unavailable");
 });
 
-test("AC-10 no personal data in events", async () => {
+test("AC-06 no personal data in events", async () => {
   const text = "Nimal Perera, Card ending 4242, Green Leaf Restaurant";
   const { deps, calls } = makeDeps({ text });
   await categorise(req(FILE), deps);
@@ -101,7 +101,7 @@ test("AC-10 no personal data in events", async () => {
   ]);
 });
 
-test("AC-11 feature switch off", async () => {
+test("Extra: switch off", async () => {
   const { deps, calls } = makeDeps({ enabled: false });
   const r = await categorise(req(FILE), deps);
   assert.equal(r.status, 404);
@@ -110,7 +110,7 @@ test("AC-11 feature switch off", async () => {
   assert.equal(calls.events.length, 0);
 });
 
-test("AC-12 final choice is logged", async () => {
+test("Extra: final choice is logged", async () => {
   for (const [final, accepted] of [["Meals", true], ["Travel", false]] as const) {
     const { deps, calls } = makeDeps();
     await recordDecision(
@@ -125,7 +125,7 @@ test("AC-12 final choice is logged", async () => {
   }
 });
 
-test("AC-13 unusable AI answer: fallback", async () => {
+test("Extra: unusable AI answer, backup rules", async () => {
   for (const llm of [
     { category: "Groceries", confidence: 0.9, tokens: 5 },
     { category: "Meals", confidence: 1.4, tokens: 5 },
@@ -140,7 +140,7 @@ test("AC-13 unusable AI answer: fallback", async () => {
   }
 });
 
-test("AC-08 file too large", async () => {
+test("AC-05 file too large", async () => {
   const { deps, calls } = makeDeps({ files: { [FILE]: 10_485_761 } });
   const r = await categorise(req(FILE), deps);
   assert.equal(r.status, 413);
@@ -149,12 +149,12 @@ test("AC-08 file too large", async () => {
   assert.equal(calls.llm, 0);
 });
 
-test("AC-08 exactly 10 MB is accepted", async () => {
+test("Extra: exactly 10 MB is accepted", async () => {
   const { deps } = makeDeps({ files: { [FILE]: 10_485_760 } });
   assert.equal((await categorise(req(FILE), deps)).status, 200);
 });
 
-test("AC-09 bad input", async () => {
+test("Extra: bad input", async () => {
   const { deps } = makeDeps({ files: { [FILE]: 10, "claim-1042/a.gif": 10, "claim-2000/a.jpg": 10 } });
   for (const f of [undefined, "claim-1042/a.gif", "claim-2000/a.jpg"]) {
     const r = await categorise(req(f), deps);
@@ -163,7 +163,7 @@ test("AC-09 bad input", async () => {
   }
 });
 
-test("AC-09 file not in storage", async () => {
+test("Extra: file not in storage", async () => {
   const { deps } = makeDeps();
   const r = await categorise(req("claim-1042/missing.png"), deps);
   assert.equal(r.status, 404);
