@@ -8,7 +8,7 @@
 
 - **Other pair:** ______
 - **Their spec version (commit hash):** ______
-- **My spec version:** v0.7
+- **My spec version:** v0.8 (the review below was on v0.7)
 
 Kinds of problem ("smell"): **vague** (no number or clear meaning), **hidden assumption** (obvious to me, never written down), **embedded solution** (says how, not what).
 
@@ -17,9 +17,9 @@ Kinds of problem ("smell"): **vague** (no number or clear meaning), **hidden ass
 | Metric | Target | Achieved |
 |--------|--------|----------|
 | Smells found in their spec | 5+ | Not yet |
-| Smells found in mine | 3+ | 9 (by the AI agent's questions and my own reading, see below) |
-| Acceptance criteria you pushed back on | 1+ | Not yet |
-| Reviewer disagreements that produced a real change | 1+ | Not yet |
+| Smells found in mine | 3+ | 14: 9 from the AI sessions and my own reading, 5 from the review I received |
+| Acceptance criteria you pushed back on | 1+ | 2 (AC-03 "invented rules", and adding more criteria) |
+| Reviewer disagreements that produced a real change | 1+ | 1 (AC-03, see below) |
 
 ## Smells found in my spec
 
@@ -52,19 +52,33 @@ _To fill in after I read their spec._
 
 ## Feedback received (my spec)
 
-_To fill in after they read my spec._
+> **Who wrote this review?** Thevinu pasted it into our chat on 2026-10-15, and it is not named. **Fill in the reviewer before you hand this in.** If it came from an AI tool and not from another pair, say so here, because the brief asks for feedback from another pair.
 
-- **Strengths:** ______
-- **Risks:** ______
-- **Rewrites I accepted and rewrites I pushed back on, and why:** ______
+- **Reviewer:** ______ (not named)
+- **Spec version reviewed:** v0.7
 
-| # | Reviewer | Section | Smell type | Quote | Suggested rewrite |
-|---|----------|---------|------------|-------|-------------------|
-| 1 | received from | ______ | ______ | ______ | ______ |
-| 2 | received from | ______ | ______ | ______ | ______ |
+**Strengths (their words)**
+1. "It's improved" compared with the earlier version.
+2. "Your six criteria are a solid foundation."
+3. "Privacy is improved."
+
+**Risks**
+1. The 4 second requirement is not checked anywhere. The 5 second log limit is a different measurement.
+2. The backup rules are not in the brief.
+3. Reader failure and reader down are not told apart, "10 MB" is unclear, and the privacy criterion can't prove data stays in the tenant.
+
+| # | Reviewer | Section | Smell type | Quote | Suggested rewrite | What I did |
+|---|----------|---------|------------|-------|-------------------|------------|
+| 1 | received from | Contract and AC-01 | Vague | "under 4 seconds for 95 out of 100 calls" | Say how it is verified. | **Accepted.** A table in Section 4 says it is checked by a load test of 50 calls at once on the real services. |
+| 2 | received from | AC-03 | Embedded solution | "taxi" and "toll" give "Travel", confidence exactly 0.5 | Remove the invented mapping unless the spec defines it. | **Partly accepted.** The mapping was already defined in the spec, so I kept it, but I marked it as our own proposal (open question 9). I loosened AC-03 to what the brief says: `rule-based` and confidence 0.5 or less. |
+| 3 | received from | AC-04 | Hidden assumption | "the reader finds no words" | Tell an unreadable image from a reader that is down. | **Accepted.** AC-04 now says the reader works but finds no words, and that a reader that is down gives 502. |
+| 4 | received from | AC-05 | Vague | "one byte over 10 MB" | Decide MB or MiB and use it everywhere. | **Accepted.** The spec says 10 MB means 10,485,760 bytes everywhere. Open question 10 asks if it should be 10,000,000. |
+| 5 | received from | AC-06 | Hidden assumption | "no personal details in the log" | List the allowed fields. Say how "stays in the tenant" is checked. | **Accepted.** AC-06 lists the field names. The tenant rule is now a release check in the Section 4 table. |
+
+**Where I disagreed.** The review says the feature switch and the accept or change choice are "missing entirely", and suggests adding them. I did **not** add more criteria. Both are already checked by tests ("switch off", "final choice is logged"), and the spec just didn't show the link. The review itself says every requirement doesn't need its own criterion. So I added the table in Section 4 that links every requirement in the brief to its check. That was the real change.
 
 ## Reflection
 
-- **Which smell did my spec have most?** Hidden assumptions and vague wording. The two AI sessions asked 14 questions between them, and nearly all pointed at something I never wrote down because it felt obvious.
+- **Which smell did my spec have most?** Hidden assumptions and vague wording. The review agreed: its five points were two hidden assumptions, two vague wordings and one invented rule. The two AI sessions asked 14 questions between them, and nearly all pointed at something I never wrote down because it felt obvious.
 - **What surprised me?** The AI stayed close to the spec. When it went off track, it was usually where my spec had a gap. So most "AI mistakes" were my spec's mistakes.
 - **Which smell was easiest to spot in someone else's spec?** ______ (to fill in after I review theirs)

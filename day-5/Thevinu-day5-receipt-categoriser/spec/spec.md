@@ -1,4 +1,4 @@
-# Receipt Categoriser — Feature Spec v0.7
+# Receipt Categoriser — Feature Spec v0.8
 
 **Author:** Thevinu · **Status:** Draft · **Date:** 2026-10-15
 
@@ -33,7 +33,7 @@ The Web app sends `POST /claims/{claimId}/receipts/categorise` with the receipt 
 ```
 
 - The input is the receipt image and the claim ID. The brief sends the image in the call. Our ADR 0004 says pictures never pass through the API, so the call names the image already in Receipt storage.
-- The file is a JPEG or PNG, at most 10 MB (10,485,760 bytes). The type is decided by the file name ending (`.jpg`, `.jpeg`, `.png`, capital letters don't matter).
+- The file is a JPEG or PNG, at most 10 MB. In this spec **10 MB means 10 × 1,048,576 = 10,485,760 bytes** (also written 10 MiB), everywhere: the spec, the criteria, the tests and the code. The type is decided by the file name ending (`.jpg`, `.jpeg`, `.png`, capital letters don't matter).
 - A file belongs to claim 1042 if its path starts with `claim-1042/`.
 - The person is signed in, owns the claim, and the claim is a Draft. The Auth part already checks this.
 
@@ -79,7 +79,7 @@ Two log entries go to Application Insights as `customEvents`.
 - **Order of checks:** the switch, then the input (400), then storage (404), then the size (413), then the outside services.
 - **AI problem:** if Azure OpenAI gives an error, takes over 2.0 seconds, or gives an answer we can't use (a category that is not one of the five, or a confidence outside 0.0 to 1.0), use the backup rules. The call still returns 200.
 - **Time:** the whole call takes under 4 seconds for 95 out of 100 calls.
-- **Backup rules:** look for these whole words in the receipt words, ignoring capitals.
+- **Backup rules:** the brief only says the backup must be rule-based with a confidence of 0.5 or less. The words and scores below are **our own proposal** (open question 9). Look for these whole words in the receipt words, ignoring capitals.
 
 | Category | Words |
 |----------|-------|
@@ -92,7 +92,24 @@ Count the **different** listed words for each category (a word counts once). The
 
 ## 4. Acceptance criteria
 
-See `Thevinu-day5-receipt-categoriser-acceptance.md`. There are 6 (AC-01 to AC-06). The other rules above are checked by extra tests in the code.
+See `Thevinu-day5-receipt-categoriser-acceptance.md`. There are 6 (AC-01 to AC-06).
+
+**How every requirement in the brief is checked.** Not every requirement needs its own criterion. This table says where each one is checked.
+
+| Requirement from the brief | How it is checked |
+|----------------------------|-------------------|
+| Suggests one of the five categories, with a confidence | AC-01 |
+| Below 0.6 is "Needs review" | AC-02, and the extra test for the exact 0.6 edge |
+| The person can accept or change the suggestion, and the final choice is logged | Extra test "final choice is logged" (accepted, and changed) |
+| A receipt that can't be read gives "Other" and a clear message | AC-04 |
+| Reader (Document Intelligence) down gives 502 | Extra test "reading service unavailable" |
+| Every suggestion is logged | AC-01 and AC-06 |
+| Under 4 seconds for 95 out of 100 calls | **Not a unit test.** A load test of 50 calls at once on the real services, before release. The code tests only check the 2.0 second AI limit, with a fake slow AI. The log entry is a separate limit: within 5 seconds. |
+| Keeps working when the AI has a short outage | AC-03, and the extra tests for a slow AI and an unusable AI answer |
+| No personal details in the logs | AC-06 |
+| Personal details must not leave the BISTEC Azure tenant | **Not a unit test.** A release check that the AI and reader resources are inside the BISTEC tenant and that public OpenAI is not used. |
+| No more than LKR 5 per suggestion | **Not checked in code.** We log `llmTokens` and Finance works out the cost each month (open question 5). |
+| The feature can be turned off without a deploy | Extra test "switch off" |
 
 ## 5. Examples
 
@@ -139,3 +156,5 @@ HTTP 413  { "error": "too_large", "message": "Receipt is larger than 10 MB." }
 6. **Automatic or a button?** The brief doesn't say when the suggestion is asked for. We assume the app asks by itself after each upload.
 7. **Starting figure.** How often is the category wrong today? Without it, the 70% target is a guess.
 8. **A failed log.** If sending a log entry fails, should the person still get the suggestion? We suggest yes.
+9. **The backup rules.** The brief gives no word list or scores. Are our words and scores (Section 3, Rules) acceptable to the business?
+10. **What does 10 MB mean?** We use 10,485,760 bytes (10 MiB). Should it be 10,000,000 bytes instead?

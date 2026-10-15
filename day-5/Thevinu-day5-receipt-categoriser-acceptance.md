@@ -1,6 +1,6 @@
 # Receipt Categoriser — Acceptance Criteria
 
-**Author:** Thevinu · **Status:** Draft · **Spec:** `Thevinu-day5-receipt-categoriser-spec.md` v0.7
+**Author:** Thevinu · **Status:** Draft · **Spec:** `Thevinu-day5-receipt-categoriser-spec.md` v0.8
 
 Each criterion is one story. **Given** is the starting situation. **When** is the one thing that happens. **Then** is what we must see from the outside: the answer, or the log entry.
 
@@ -16,18 +16,19 @@ Each criterion is one story. **Given** is the starting situation. **When** is th
 **Then** the answer is 200 OK with `category` "Other", `confidence` 0.45 and `needsReview` true
 
 ## AC-03 AI unavailable: backup rules
-**Given** the AI is answering 503, and the receipt words include "taxi" and "toll"
+**Given** the AI is answering 503, and a stored receipt can be read
 **When** the app makes the categorise call
-**Then** the answer is 200 OK with `category` "Travel", `confidence` 0.5, `source` "rule-based" and `needsReview` true
+**Then** the answer is 200 OK with `source` "rule-based" and `confidence` 0.5 or less
+**And** the `category` is one of the five categories and `needsReview` is true
 
 ## AC-04 receipt cannot be read
-**Given** a stored image where the reader finds no words
+**Given** a stored image where the reader works but finds no words (a reader that is down is a different case, answered with 502)
 **When** the app makes the categorise call
 **Then** the answer is 200 OK with `category` "Other", `confidence` 0.0, `source` "rule-based", `needsReview` true and `message` "We couldn't read this receipt. Please choose a category."
 **And** the `categoriser.suggested` log entry has `outcome` "unreadable"
 
 ## AC-05 file too big
-**Given** a stored file of 10,485,761 bytes (one byte over 10 MB)
+**Given** a stored file of 10,485,761 bytes (one byte over the limit of 10 MB = 10,485,760 bytes)
 **When** the app makes the categorise call
 **Then** the answer is 413 with `error` "too_large"
 
@@ -35,4 +36,4 @@ Each criterion is one story. **Given** is the starting situation. **When** is th
 **Given** a receipt that says "Nimal Perera" and "Card ending 4242"
 **When** the app makes the categorise call
 **Then** the `categoriser.suggested` log entry holds no receipt words, no name, no card digits and no file name
-**And** it holds only the fields listed in the spec
+**And** it holds only these fields: `suggestionId`, `claimId`, `category`, `confidence`, `source`, `needsReview`, `outcome`, `durationMs`, `llmTokens`
