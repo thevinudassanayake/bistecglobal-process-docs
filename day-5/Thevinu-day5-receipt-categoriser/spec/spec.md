@@ -1,4 +1,4 @@
-# Receipt Categoriser — Feature Spec v0.5
+# Receipt Categoriser — Feature Spec v0.6
 
 **Author:** Thevinu · **Status:** Draft · **Date:** 2026-10-15 · **For:** GreenChit (Day 4 design pack)
 
@@ -30,7 +30,7 @@ The Receipt Categoriser reads the receipt and suggests a category. Most of the t
 ## 3. Contract (what goes in and what comes out)
 
 ### Inputs (what the app sends)
-The app sends `POST /claims/{claimId}/receipts/categorise` with the name of the receipt file:
+The Web app sends `POST /claims/{claimId}/receipts/categorise` with the name of the receipt file. The app does this by itself, in the background, right after a receipt is uploaded. The person does not press anything and never makes this call.
 
 ```json
 { "receiptFile": "claim-1042/taxi.jpg" }
@@ -168,6 +168,7 @@ Azure OpenAI answers 503. The receipt says "City Taxi, Highway Toll, Total LKR 1
 7. **Log details.** Is it fine that the file name is not logged, even though it would help support?
 8. **Starting figure.** How many claims does Finance change today? Without it, the 70% target is a guess.
 9. **A failed log.** If sending a log entry fails, should the person still get the suggestion? We suggest yes.
+10. **Automatic or a button?** The brief doesn't say when the suggestion is asked for. We assume the app asks by itself after each upload. Should there instead be a "Suggest a category" button?
 
 ## Change history
 
@@ -175,3 +176,4 @@ Azure OpenAI answers 503. The receipt says "City Taxi, Highway Toll, Total LKR 1
 - **v0.2 to v0.3** (after the second AI session): "most matching words" now means the most different words, "cannot be read" now means no words or only blank space, and what the submit step passes to the "decided" entry. These describe what the tested code already did, so here the spec caught up with the code.
 - **v0.3 to v0.4:** plainer wording only. No rule or number changed.
 - **v0.4 to v0.5:** cut the acceptance criteria from 13 to the six main ones. No rule changed. The other seven are now extra tests in the code.
+- **v0.5 to v0.6:** said that the Web app makes the call by itself after an upload (the person never makes it), and added open question 10. No rule or number changed.

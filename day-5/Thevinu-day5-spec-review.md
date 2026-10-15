@@ -8,7 +8,7 @@
 
 - **The other pair:** ______ (to fill in)
 - **Their spec version (commit hash):** ______ (to fill in)
-- **My spec version:** v0.5
+- **My spec version:** v0.6
 
 **The three kinds of problem (called "smells" in the course):**
 - **Vague:** a word with no number or clear meaning, like "fast".
