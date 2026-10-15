@@ -141,7 +141,7 @@ test("Extra: unusable AI answer, backup rules", async () => {
 });
 
 test("AC-05 file too large", async () => {
-  const { deps, calls } = makeDeps({ files: { [FILE]: 10_485_761 } });
+  const { deps, calls } = makeDeps({ files: { [FILE]: 10_000_001 } });
   const r = await categorise(req(FILE), deps);
   assert.equal(r.status, 413);
   assert.equal((r.body as any).error, "too_large");
@@ -150,7 +150,7 @@ test("AC-05 file too large", async () => {
 });
 
 test("Extra: exactly 10 MB is accepted", async () => {
-  const { deps } = makeDeps({ files: { [FILE]: 10_485_760 } });
+  const { deps } = makeDeps({ files: { [FILE]: 10_000_000 } });
   assert.equal((await categorise(req(FILE), deps)).status, 200);
 });
 
@@ -168,4 +168,19 @@ test("Extra: file not in storage", async () => {
   const r = await categorise(req("claim-1042/missing.png"), deps);
   assert.equal(r.status, 404);
   assert.equal((r.body as any).error, "receipt_not_found");
+});
+
+test("Extra: p95 under 4 seconds with fake services", async () => {
+  const { deps } = makeDeps({ readerDelayMs: 1400, llmNeverAnswers: true, text: "City Taxi, Highway Toll" });
+  const durations = await Promise.all(
+    Array.from({ length: 50 }, async () => {
+      const t0 = Date.now();
+      const r = await categorise(req(FILE), deps);
+      assert.equal(r.status, 200);
+      return Date.now() - t0;
+    }),
+  );
+  durations.sort((a, b) => a - b);
+  const p95 = durations[Math.ceil(0.95 * durations.length) - 1]!;
+  assert.ok(p95 < 4000, `p95 was ${p95} ms`);
 });

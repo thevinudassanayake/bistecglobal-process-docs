@@ -7,7 +7,7 @@ Suggests a category (Meals, Travel, Lodging, Office Supplies or Other) for an up
 1. Install Node 24 or newer. Nothing else is needed.
 2. Open a terminal in this folder.
 3. Run `node --test`
-4. You should see **15 tests pass**. One waits about 2 seconds on purpose.
+4. You should see **16 tests pass**. Two wait a few seconds on purpose (about 2 and 3 seconds).
 
 ## Folders
 
@@ -28,9 +28,9 @@ Azure is not connected, so each test uses fake services that give the answers we
 | AC-02 | A mixed receipt gives a low score (0.45), so "Needs review". |
 | AC-03 | When the AI is down, the backup rules choose Travel from "taxi" and "toll". |
 | AC-04 | An unreadable receipt gives "Other" and a clear message. |
-| AC-05 | A file one byte over 10 MB is refused. |
+| AC-05 | A file one byte over the limit (10 MB = 10,000,000 bytes) is refused. |
 | AC-06 | The log entry holds no name, card number, receipt words or file name. |
-| 9 "Extra" tests | The other rules in the spec: the exact 0.6 edge, an AI that is too slow, the reader being down, exactly 10 MB, bad input, a missing file, the switch off, the final-choice log, and an unusable AI answer. |
+| 10 "Extra" tests | The other rules in the spec: the exact 0.6 edge, an AI that is too slow, the reader being down, a file of exactly 10 MB, bad input, a missing file, the switch off, the final-choice log, an unusable AI answer, and **p95 under 4 seconds** (50 calls at once with a slow fake reader and an AI that never answers). |
 
 ## What is real and what is not
 

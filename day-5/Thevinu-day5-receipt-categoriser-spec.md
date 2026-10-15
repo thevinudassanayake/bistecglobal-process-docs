@@ -1,4 +1,4 @@
-# Receipt Categoriser — Feature Spec v0.8
+# Receipt Categoriser — Feature Spec v0.9
 
 **Author:** Thevinu · **Status:** Draft · **Date:** 2026-10-15
 
@@ -33,7 +33,7 @@ The Web app sends `POST /claims/{claimId}/receipts/categorise` with the receipt 
 ```
 
 - The input is the receipt image and the claim ID. The brief sends the image in the call. Our ADR 0004 says pictures never pass through the API, so the call names the image already in Receipt storage.
-- The file is a JPEG or PNG, at most 10 MB. In this spec **10 MB means 10 × 1,048,576 = 10,485,760 bytes** (also written 10 MiB), everywhere: the spec, the criteria, the tests and the code. The type is decided by the file name ending (`.jpg`, `.jpeg`, `.png`, capital letters don't matter).
+- The file is a JPEG or PNG, at most 10 MB. In this spec **10 MB means 10,000,000 bytes**, as the brief says 10 MB, everywhere: the spec, the criteria, the tests and the code. The type is decided by the file name ending (`.jpg`, `.jpeg`, `.png`, capital letters don't matter).
 - A file belongs to claim 1042 if its path starts with `claim-1042/`.
 - The person is signed in, owns the claim, and the claim is a Draft. The Auth part already checks this.
 
@@ -67,6 +67,8 @@ An error is `{ "error": "<code>", "message": "<text>" }`. The text may change, t
 | 413 | `too_large` | The stored file is over 10 MB |
 | 502 | `upstream_unavailable` | Document Intelligence (the reader) is down or takes over 1.5 seconds |
 
+For example, when the reader is down: `HTTP 502  { "error": "upstream_unavailable", "message": "The text reader is unavailable." }`. (A reader that works but finds no words is a different case: it is the `200 OK` "cannot be read" answer in Outputs.)
+
 ### Side effects
 Two log entries go to Application Insights as `customEvents`.
 
@@ -79,6 +81,7 @@ Two log entries go to Application Insights as `customEvents`.
 - **Order of checks:** the switch, then the input (400), then storage (404), then the size (413), then the outside services.
 - **AI problem:** if Azure OpenAI gives an error, takes over 2.0 seconds, or gives an answer we can't use (a category that is not one of the five, or a confidence outside 0.0 to 1.0), use the backup rules. The call still returns 200.
 - **Time:** the whole call takes under 4 seconds for 95 out of 100 calls.
+- **Data boundary:** receipt words are sent only to Azure OpenAI and Azure AI Document Intelligence, and both are resources inside the BISTEC Azure tenant. Public OpenAI is not used.
 - **Backup rules:** the brief only says the backup must be rule-based with a confidence of 0.5 or less. The words and scores below are **our own proposal** (open question 9). Look for these whole words in the receipt words, ignoring capitals.
 
 | Category | Words |
@@ -104,10 +107,10 @@ See `Thevinu-day5-receipt-categoriser-acceptance.md`. There are 6 (AC-01 to AC-0
 | A receipt that can't be read gives "Other" and a clear message | AC-04 |
 | Reader (Document Intelligence) down gives 502 | Extra test "reading service unavailable" |
 | Every suggestion is logged | AC-01 and AC-06 |
-| Under 4 seconds for 95 out of 100 calls | **Not a unit test.** A load test of 50 calls at once on the real services, before release. The code tests only check the 2.0 second AI limit, with a fake slow AI. The log entry is a separate limit: within 5 seconds. |
+| Under 4 seconds for 95 out of 100 calls | **Two checks.** (1) An extra test with fake services, "p95 under 4 seconds with fake services": 50 calls at once, the fake reader takes 1.4 seconds and the fake AI never answers (the slowest allowed path). The p95 (the time that 95 out of 100 calls beat) must be under 4 seconds. This shows our own time limits add up. (2) Before release, the same 50-call test on the **real** services, because a fake test can't measure real speed. The log entry is a separate limit: within 5 seconds. |
 | Keeps working when the AI has a short outage | AC-03, and the extra tests for a slow AI and an unusable AI answer |
 | No personal details in the logs | AC-06 |
-| Personal details must not leave the BISTEC Azure tenant | **Not a unit test.** A release check that the AI and reader resources are inside the BISTEC tenant and that public OpenAI is not used. |
+| Personal details must not leave the BISTEC Azure tenant | **Not a unit test.** The "Data boundary" rule in Section 3, checked before release: (1) the resource list shows the AI and the reader are inside the BISTEC tenant; (2) the Categoriser's settings point only to those two resources; (3) public OpenAI is not set up anywhere. |
 | No more than LKR 5 per suggestion | **Not checked in code.** We log `llmTokens` and Finance works out the cost each month (open question 5). |
 | The feature can be turned off without a deploy | Extra test "switch off" |
 
@@ -157,4 +160,4 @@ HTTP 413  { "error": "too_large", "message": "Receipt is larger than 10 MB." }
 7. **Starting figure.** How often is the category wrong today? Without it, the 70% target is a guess.
 8. **A failed log.** If sending a log entry fails, should the person still get the suggestion? We suggest yes.
 9. **The backup rules.** The brief gives no word list or scores. Are our words and scores (Section 3, Rules) acceptable to the business?
-10. **What does 10 MB mean?** We use 10,485,760 bytes (10 MiB). Should it be 10,000,000 bytes instead?
+10. **What does 10 MB mean?** We use 10,000,000 bytes, as the brief says 10 MB. Does the business mean 10 MiB (10,485,760 bytes) instead?

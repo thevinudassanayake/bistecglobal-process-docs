@@ -3,7 +3,7 @@ import type { Category, CategoriseRequest, CategoriseResponse, DecisionInput, De
 import { categoriseWithLlm } from "./llm-categoriser.ts";
 import { categoriseByRules } from "./rule-based-categoriser.ts";
 
-export const MAX_BYTES = 10_485_760;
+export const MAX_BYTES = 10_000_000;
 const READER_TIMEOUT_MS = 1500;
 const UNREADABLE_MESSAGE = "We couldn't read this receipt. Please choose a category.";
 export const REVIEW_THRESHOLD = 0.6;

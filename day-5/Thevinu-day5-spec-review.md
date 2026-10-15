@@ -8,7 +8,7 @@
 
 - **Other pair:** ______
 - **Their spec version (commit hash):** ______
-- **My spec version:** v0.8 (the review below was on v0.7)
+- **My spec version:** v0.9 (the first review was on v0.7, the second on v0.8)
 
 Kinds of problem ("smell"): **vague** (no number or clear meaning), **hidden assumption** (obvious to me, never written down), **embedded solution** (says how, not what).
 
@@ -19,7 +19,7 @@ Kinds of problem ("smell"): **vague** (no number or clear meaning), **hidden ass
 | Smells found in their spec | 5+ | Not yet |
 | Smells found in mine | 3+ | 14: 9 from the AI sessions and my own reading, 5 from the review I received |
 | Acceptance criteria you pushed back on | 1+ | 2 (AC-03 "invented rules", and adding more criteria) |
-| Reviewer disagreements that produced a real change | 1+ | 1 (AC-03, see below) |
+| Reviewer disagreements that produced a real change | 1+ | 2 (AC-03, and the 10 MB limit, see below) |
 
 ## Smells found in my spec
 
@@ -55,7 +55,7 @@ _To fill in after I read their spec._
 > **Who wrote this review?** Thevinu pasted it into our chat on 2026-10-15, and it is not named. **Fill in the reviewer before you hand this in.** If it came from an AI tool and not from another pair, say so here, because the brief asks for feedback from another pair.
 
 - **Reviewer:** ______ (not named)
-- **Spec version reviewed:** v0.7
+- **Spec version reviewed:** v0.7, then v0.8
 
 **Strengths (their words)**
 1. "It's improved" compared with the earlier version.
@@ -76,6 +76,16 @@ _To fill in after I read their spec._
 | 5 | received from | AC-06 | Hidden assumption | "no personal details in the log" | List the allowed fields. Say how "stays in the tenant" is checked. | **Accepted.** AC-06 lists the field names. The tenant rule is now a release check in the Section 4 table. |
 
 **Where I disagreed.** The review says the feature switch and the accept or change choice are "missing entirely", and suggests adding them. I did **not** add more criteria. Both are already checked by tests ("switch off", "final choice is logged"), and the spec just didn't show the link. The review itself says every requirement doesn't need its own criterion. So I added the table in Section 4 that links every requirement in the brief to its check. That was the real change.
+
+**Second round (on spec v0.8).** The same reviewer repeated four points and found no new ones. This is what changed:
+
+| Point | What I did |
+|-------|------------|
+| "10 MB" is 10,000,000 bytes, not 10,485,760 | **Accepted. This was a real disagreement.** In round one I chose 10 MiB. I changed the spec to 10,000,000 bytes, then had the AI agent change the code and tests (`prompt-3.md`). Open question 10 now asks if the business means 10 MiB. |
+| The 4 second p95 needs a performance test | **Accepted.** Added a test with fake services (50 calls at once, a slow reader, an AI that never answers). The real-service load test is still needed and is in the spec. |
+| Define the 502 answer, and the unreadable case, explicitly | **Accepted.** The spec now has an example 502 answer, and says an unreadable receipt is a different case. |
+| The tenant boundary must be handled separately | **Accepted.** The spec has a "Data boundary" rule and a three-step release check. |
+| The switch, and accepting or changing the suggestion, must be covered in tests | **Already done.** The extra tests "switch off" and "final choice is logged" cover them. No new criteria. |
 
 ## Reflection
 

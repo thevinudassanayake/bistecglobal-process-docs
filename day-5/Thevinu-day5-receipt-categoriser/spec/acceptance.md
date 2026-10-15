@@ -1,6 +1,6 @@
 # Receipt Categoriser — Acceptance Criteria
 
-**Author:** Thevinu · **Status:** Draft · **Spec:** `Thevinu-day5-receipt-categoriser-spec.md` v0.8
+**Author:** Thevinu · **Status:** Draft · **Spec:** `Thevinu-day5-receipt-categoriser-spec.md` v0.9
 
 Each criterion is one story. **Given** is the starting situation. **When** is the one thing that happens. **Then** is what we must see from the outside: the answer, or the log entry.
 
@@ -28,7 +28,7 @@ Each criterion is one story. **Given** is the starting situation. **When** is th
 **And** the `categoriser.suggested` log entry has `outcome` "unreadable"
 
 ## AC-05 file too big
-**Given** a stored file of 10,485,761 bytes (one byte over the limit of 10 MB = 10,485,760 bytes)
+**Given** a stored file of 10,000,001 bytes (one byte over the limit of 10 MB = 10,000,000 bytes)
 **When** the app makes the categorise call
 **Then** the answer is 413 with `error` "too_large"
 

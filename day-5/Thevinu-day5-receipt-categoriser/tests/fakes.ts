@@ -15,6 +15,8 @@ export function makeDeps(opts: {
   llm?: LlmResult | { category: string; confidence: number; tokens: number };
   llmFails?: boolean;
   llmDelayMs?: number;
+  llmNeverAnswers?: boolean;
+  readerDelayMs?: number;
 } = {}): { deps: Deps; calls: Calls } {
   const calls: Calls = { reader: 0, llm: 0, storage: 0, events: [] };
   const files = opts.files ?? { "claim-1042/receipt.jpg": 1000 };
@@ -29,6 +31,7 @@ export function makeDeps(opts: {
     textReader: {
       readText: async () => {
         calls.reader++;
+        if (opts.readerDelayMs) await new Promise((r) => setTimeout(r, opts.readerDelayMs));
         if (opts.readerFails) throw new Error("503 reader down");
         if (opts.text === null) return null;
         return opts.text ?? "Green Leaf Restaurant, Lunch for 2, Total LKR 2,400";
@@ -37,6 +40,7 @@ export function makeDeps(opts: {
     llm: {
       categorise: async () => {
         calls.llm++;
+        if (opts.llmNeverAnswers) await new Promise(() => {});
         if (opts.llmDelayMs) await new Promise((r) => setTimeout(r, opts.llmDelayMs));
         if (opts.llmFails) throw new Error("503 openai down");
         return (opts.llm ?? { category: "Meals", confidence: 0.86, tokens: 120 }) as LlmResult;
