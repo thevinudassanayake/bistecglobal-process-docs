@@ -1,39 +1,39 @@
 # AI Implementation Report
 
-**Author:** Thevinu · **Spec:** `spec/spec.md` · **Tests:** `node --test`, 15 of 15 pass
+**Author:** Thevinu · **Result:** 15 of 15 tests pass (run `node --test`)
 
-## How the session was run
+## How the session worked
 
-- The AI agent was a **separate Claude agent** that saw only the prompt. It had no access to this conversation or to my other files. It could read and write only inside this repo folder.
-- Each prompt followed the same spec-led template (`src/ai-implementation-prompt.md`): the constraints first, then the whole spec and acceptance criteria pasted in, and a "Do now" line that names which criteria to build.
-- The prompts and answers are saved word for word: `prompt-1.md`, `response-1.md`, `prompt-2.md`, `response-2.md`. A line at the top of each prompt gives the repo folder.
-- After each pass I **ran the tests and read the code myself** before accepting anything.
+- The AI was a **separate Claude agent**. It saw only the message I sent it. It could not see our chat or my other files, and it could only change files inside this folder.
+- Each message had the same shape (the template is in `src/ai-implementation-prompt.md`): the rules first, then the whole spec and the acceptance criteria, then a line saying which criteria to build now.
+- The messages and the agent's answers are saved word for word: `prompt-1.md`, `response-1.md`, `prompt-2.md`, `response-2.md`.
+- After each round I **ran the tests and read the code myself** before I accepted it.
 
-## The reviews
+## What happened in each round
 
-| # | What I asked the AI | What it produced | Did it match the spec? | My fix or follow-up |
-|---|---------------------|------------------|------------------------|---------------------|
-| 1 | Build the main flow: AC-01, 02, 03 (AI path and the 0.6 line) and AC-08, 09 (input errors) | `types.ts`, `categoriser.ts`, `llm-categoriser.ts`, the fakes and 7 passing tests. It listed 9 questions and 9 assumptions. | **Mostly.** No invented response fields, no new dependencies, only the allowed files. Three small deviations (see below). | Fixed the **spec**, not the code. Wrote spec v0.2: defined "belongs to this claim", the file type rule, the order of checks, the rule for an unusable AI answer (new AC-13), rounding and the id format. |
-| 2 | Build the rest: AC-04, 05, 06, 07, 10, 11, 12, 13 (fallback, timeouts, unreadable receipts, privacy, switch, final choice) | `rule-based-categoriser.ts`, timeouts and answer checks in `llm-categoriser.ts`, and 8 new tests. All 15 pass. | **Mostly.** One clear deviation from my instructions, and three places where it filled a gap in the spec (see below). | Ran tests myself. Broke the code five ways in a scratch copy to check the tests notice (all five caught). Wrote spec v0.3 to close the three gaps. |
-| 3 | (My own check, no AI) Read all the code against the spec | I found no extra response fields, no extra error codes, and no outside services called by the rule-based path. | Yes | None needed. |
+| # | What I asked | What the AI gave back | Did it match the spec? | What I did about it |
+|---|--------------|-----------------------|------------------------|---------------------|
+| 1 | Build the main flow: AC-01, 02, 03 (the AI path and the 0.6 line) and AC-08, 09 (bad input) | The main code, a fake-services helper and 7 passing tests. It also listed 9 questions and 9 guesses it had made. | **Mostly.** It added no extra fields, no extra tools and touched only the files I allowed. It made 3 small slips (see below). | I fixed the **spec**, not the code. In v0.2 I wrote down what "belongs to this claim" means, how the file type is decided, the order of the checks, what to do with an AI answer we can't use (new AC-13), the rounding and the code format. |
+| 2 | Build the rest: AC-04, 05, 06, 07, 10, 11, 12, 13 (backup rules, time limits, unreadable receipts, privacy, the switch, the final choice) | The backup rules, the time limits, the answer checks and 8 new tests. All 15 pass. | **Mostly.** It broke one of my instructions, and it filled 3 gaps in the spec with its own choices (see below). | I ran the tests. I broke the code on purpose in 5 ways to see if the tests would notice (they did, every time). I wrote spec v0.3 to close the 3 gaps. |
+| 3 | (No AI. My own check.) I read all the code against the spec. | No extra fields, no extra error codes, and the backup rules never call the AI. | Yes | Nothing to fix. |
 
-## Where the AI deviated
+## Where the AI went off the spec
 
-1. **Pass 2 skipped an instruction.** I asked it to list the ambiguities and assumptions **before** writing code. It wrote the code first, and said so in its answer ("I did not write the ambiguities and assumptions list before the code"). The list it gave afterwards was useful, but the order I asked for was not followed. I did nothing in the code. Lesson: with a one-shot agent, the "ask before you code" step cannot work, because nobody can answer it. The questions need a separate first prompt.
-2. **Pass 1 went one line beyond the files rule.** I allowed `package.json` for "a test script only". It also added `"type": "module"`, and said so itself. The line is harmless and it removes a Node warning, so **I kept it**.
-3. **Pass 1 added two optional test hooks** (`now` and `newId`) to the list of outside services. The spec did not ask for them. They help the tests and do nothing else, so **I kept them**.
-4. **Pass 1 made up a rule** for "belongs to this claim" (the path starts with `claim-{id}/`). It was a sensible guess, but the spec did not say it. This was a gap in **my spec**, so I wrote the rule into spec v0.2.
-5. **Pass 2 chose how to count words** for the fallback (different words, not repeats), chose what `recordDecision` receives, and decided what "cannot be read" means. All three were gaps in my spec. I wrote them into v0.3, so there **the spec caught up with the code**. That is the opposite of spec-first, and I am saying it plainly.
+1. **In round 2 it ignored an instruction.** I told it to list its questions and guesses **before** writing code. It wrote the code first, and said so itself. Lesson: a one-shot agent can't wait for answers, so "ask first" can't work. The questions need their own first message.
+2. **In round 1 it went one line past the files rule.** I allowed `package.json` for "a test script only". It also added `"type": "module"`, and told me. The line is harmless and stops a warning, so I kept it.
+3. **In round 1 it added two optional helpers for tests** (one for the clock, one for the ID). The spec didn't ask for them. They only help the tests, so I kept them.
+4. **In round 1 it made up a rule** for "belongs to this claim": the file path starts with `claim-{number}/`. It was a sensible guess, but my spec never said it. That gap was **my fault**, so I put the rule into the spec.
+5. **In round 2 it made three choices the spec left open:** how to count words for the backup rules (different words, not repeats), what the "decided" step receives, and what "cannot be read" means. All three gaps were **my fault**. I put them into v0.3. Here the spec caught up with the code, which is the opposite of spec-first. I am saying so plainly.
 
-## What the tests do and do not prove
+## What the tests prove, and what they don't
 
-- All 13 acceptance criteria have a test. Two have extra checks (exactly 10 MB, and a file missing from storage).
-- The five deliberate bugs I tried: the 0.6 line moved, the size check off by one, the file name added to an event, the fallback confidence changed, and the AI time limit raised. Each made a test fail. A run with no change stayed green.
-- **Not proven:** anything about real Azure services. The 4 second limit is only checked with a fake slow AI service. The real time, the real cost per suggestion, and the real quality of the category answers are all unknown.
-- The AC-05 test uses a real timer, so it takes 2 seconds. That is slow for a test but not wrong.
+- Every one of the 13 criteria has a test. Two criteria have an extra check (exactly 10 MB, and a file missing from storage).
+- The 5 ways I broke the code: moved the 0.6 line, made the size check one byte off, put the file name into a log entry, changed a backup score, and made the AI time limit much longer. Each one made a test fail. A run with no change stayed green.
+- **Not proven:** anything about real Azure. The 4 second limit is only tested with a fake slow AI. The real speed, the real cost of each suggestion, and how good the real AI's answers are, are all unknown.
+- The AC-05 test waits a real 2 seconds. That is slow for a test, but it is not wrong.
 
-## What I would do next
+## What to do next
 
-1. Resolve the open questions in the spec with Finance and the Claims API owner (the 0.6 line, where the final choice is recorded, the cost per suggestion).
-2. Add a real Azure OpenAI and Document Intelligence client behind the same plain-object interfaces, and measure the real time.
+1. Get answers to the open questions in the spec from Finance and the owner of the Claims API (the 0.6 line, where to record the final choice, the cost of each suggestion).
+2. Connect the real Azure OpenAI and Document Intelligence behind the same plain interfaces, and measure the real time.
 3. Make the AC-05 test fast by letting the test set the time limit.
